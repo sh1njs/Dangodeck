@@ -1,12 +1,11 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<div class="container section about">
-  <h1 class="page-title">About Dangodeck</h1>
-  <p class="hero-lead text-muted">
-    Dangodeck is an open-source anime Trading Card Game database paired with a professional
-    developer API — made for the anime community and the developers who build for it.
-  </p>
+<div class="container page about">
+  <%- include('partials/page-header', {
+    heading: 'About Dangodeck',
+    lead: 'Dangodeck is an open-source anime Trading Card Game database paired with a professional developer API — made for the anime community and the developers who build for it.'
+  }) %>
 
   <div class="about-grid">
     <section class="nb-card about-card">

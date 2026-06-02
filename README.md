@@ -48,19 +48,19 @@ src/
 ├── server.ts                 # Entry point — bootstraps Express, mounts routes
 ├── config.ts                 # Server config (port, Redis URL, site URL, rate limit)
 ├── swagger.ts                # OpenAPI 3.0 spec + swagger-ui-express mount
-├── data/
-│   └── cards.json            # Local card snapshot (1244 cards, used as fallback)
 ├── lib/
 │   ├── types.ts              # Shared TypeScript interfaces (Card, Facets, Paginated...)
 │   ├── query.ts              # Query string parsers (list + search)
+│   ├── stats.ts              # Stat scaling model + STAT_CONFIG (server/client source of truth)
 │   ├── code-gen.ts           # Code example generator (6 languages)
+│   ├── docs.ts               # /docs page metadata (endpoint catalog + sort options)
 │   ├── elements.ts           # Element → color mapping
 │   └── icons.ts              # SVG icon helpers for templates
 ├── routes/
 │   ├── api.routes.ts         # All /api/* endpoints
-│   └── web.routes.ts         # Web UI routes + docs page endpoint definitions
+│   └── web.routes.ts         # Web UI routes (renders EJS pages)
 └── services/
-    ├── cards.service.ts      # Card loading, normalization, search, list, facets, related
+    ├── cards.service.ts      # Card loading (cloud), normalization, search, list, facets, related
     └── cache.service.ts      # Redis + in-memory fallback cache
 
 views/                        # EJS templates
@@ -74,17 +74,25 @@ views/                        # EJS templates
     ├── head.ejs
     ├── header.ejs
     ├── footer.ejs
+    ├── page-header.ejs       # Reusable page title/lead header (shared rhythm)
     └── card-tile.ejs
 
 public/                       # Static assets served directly
-├── styles.css
+├── styles.css                # Single stylesheet organized with CSS @layer + design tokens
 ├── cards.js                  # Client-side card browser (filtering, pagination)
+├── card-detail.js            # Interactive stat calculator
 ├── docs.js                   # Client-side docs interactions
-└── nav.js
+└── nav.js                    # Mobile nav toggle
 
 scripts/
-└── copy-assets.mjs           # Post-build: copies views/, public/, data/ into dist/
+└── copy-assets.mjs           # Post-build: copies views/ + public/ into dist/
 ```
+
+> **Styling** — `public/styles.css` is a single served file organized with native
+> CSS cascade layers (`tokens → base → layout → components → pages → utilities →
+> responsive → motion`). Spacing, typography, and layout use design tokens (a 4px
+> spacing scale + `clamp()` fluid type), and the responsive system is mobile-first
+> across `480 / 640 / 768 / 1024 / 1280 / 1536` breakpoints (small-mobile to ultra-wide).
 
 ---
 

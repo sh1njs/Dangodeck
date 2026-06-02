@@ -1,0 +1,14 @@
+<%
+  // Reusable page header — standard title → lead rhythm shared across pages.
+  // Locals: heading (string, required), lead (string, optional),
+  //         eyebrow (string, optional → renders an accent tag above the title).
+%>
+<header class="page-header">
+  <% if (typeof eyebrow !== 'undefined' && eyebrow) { %>
+  <span class="nb-tag tag-accent page-eyebrow"><%= eyebrow %></span>
+  <% } %>
+  <h1 class="page-title"><%= heading %></h1>
+  <% if (typeof lead !== 'undefined' && lead) { %>
+  <p class="page-lead text-muted"><%= lead %></p>
+  <% } %>
+</header>

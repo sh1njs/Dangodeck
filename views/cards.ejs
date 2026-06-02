@@ -1,11 +1,11 @@
 <%- include('partials/head') %>
 <%- include('partials/header') %>
 
-<div class="container section">
-  <h1 class="page-title">Card Catalog</h1>
-  <p class="text-muted">
-    Explore every card in the Dangodeck database. Fuzzy search, element &amp; anime filters, and sorting.
-  </p>
+<div class="container page">
+  <%- include('partials/page-header', {
+    heading: 'Card Catalog',
+    lead: 'Explore every card in the Dangodeck database. Fuzzy search, element & anime filters, and sorting.'
+  }) %>
 
   <div class="browser" data-limit="<%= limit %>" data-total="<%= total %>" data-total-pages="<%= totalPages %>">
     <div class="browser-controls">
