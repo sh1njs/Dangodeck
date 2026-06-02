@@ -1,0 +1,30 @@
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="brand">
+        <span class="brand-mark"><%- icon('layers', { size: 20 }) %></span>
+        Dangodeck
+      </a>
+      <nav class="nav-desktop">
+        <a href="/cards" class="nav-link <%= page === 'cards' ? 'is-active' : '' %>">Cards</a>
+        <a href="/docs" class="nav-link <%= page === 'docs' ? 'is-active' : '' %>">Docs</a>
+        <a href="/home" class="nav-link <%= page === 'about' ? 'is-active' : '' %>">About</a>
+        <a
+          href="https://github.com/sh1njs"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="nb-btn icon-btn"
+          aria-label="GitHub"
+        ><%- icon('github', { size: 20 }) %></a>
+      </nav>
+      <button type="button" class="nb-btn icon-btn nav-toggle" aria-label="Menu" data-nav-toggle>
+        <%- icon('menu', { size: 20 }) %>
+      </button>
+    </div>
+    <nav class="nav-mobile" data-nav-mobile hidden>
+      <a href="/cards" class="nav-link-mobile <%= page === 'cards' ? 'is-active' : '' %>">Cards</a>
+      <a href="/docs" class="nav-link-mobile <%= page === 'docs' ? 'is-active' : '' %>">Docs</a>
+      <a href="/home" class="nav-link-mobile <%= page === 'about' ? 'is-active' : '' %>">About</a>
+      <a href="https://github.com/sh1njs" target="_blank" rel="noopener noreferrer" class="nav-link-mobile">GitHub</a>
+    </nav>
+  </header>
+  <main class="site-main">

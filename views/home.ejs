@@ -1,0 +1,61 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container section about">
+  <h1 class="page-title">About Dangodeck</h1>
+  <p class="hero-lead text-muted">
+    Dangodeck is an open-source anime Trading Card Game database paired with a professional
+    developer API — made for the anime community and the developers who build for it.
+  </p>
+
+  <div class="about-grid">
+    <section class="nb-card about-card">
+      <div class="block-head-row"><%- icon('users') %><h2 class="block-title">Creator</h2></div>
+      <p class="mono about-name">Shieun</p>
+      <p class="text-muted">Strange people like to sleep > eat > sleep continuously, repeating endlessly.</p>
+      <a href="https://github.com/sh1njs" target="_blank" rel="noopener noreferrer" class="nb-btn">
+        <%- icon('github', { size: 16 }) %> github.com/sh1njs
+      </a>
+    </section>
+
+    <section class="nb-card about-card">
+      <div class="block-head-row"><%- icon('message-circle') %><h2 class="block-title">Community</h2></div>
+      <p class="about-strong">KKN — Keluh Kesah Ngoding</p>
+      <p class="text-muted">A community of developers learning and shipping together.</p>
+      <a href="https://discord.gg/vmdr8pnDkC" class="nb-btn nb-btn-accent"><%- icon('message-circle', { size: 16 }) %> Join the Discord</a>
+    </section>
+  </div>
+
+  <section class="about-text">
+    <div>
+      <h2 class="section-title">What is Dangodeck?</h2>
+      <p class="text-muted">
+        Dangodeck collects anime TCG cards — their stats, elements, and talents — into one clean,
+        searchable catalog, and exposes everything through a fast REST API with fuzzy search,
+        pagination, filtering, and Redis-backed caching.
+      </p>
+    </div>
+    <div>
+      <h2 class="section-title">The goal</h2>
+      <p class="text-muted">
+        To feel like a real public product the anime community and developers actually use — in
+        the spirit of the Pokémon TCG API, AniList, and TCGDex.
+      </p>
+    </div>
+    <div class="nb-card about-card">
+      <div class="block-head-row"><%- icon('heart') %><h2 class="block-title">Contribute</h2></div>
+      <p class="text-muted">
+        Dangodeck is open source. Contributions, card data, and feedback are welcome — open an
+        issue or a pull request on GitHub.
+      </p>
+      <div class="about-actions">
+        <a href="https://github.com/sh1njs" target="_blank" rel="noopener noreferrer" class="nb-btn">
+          <%- icon('github', { size: 16 }) %> Contribute on GitHub
+        </a>
+        <a href="/docs" class="nb-btn"><%- icon('book-open', { size: 16 }) %> Read the API docs</a>
+      </div>
+    </div>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

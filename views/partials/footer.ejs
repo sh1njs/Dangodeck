@@ -1,0 +1,37 @@
+  </main>
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <div class="brand">
+          <span class="brand-mark"><%- icon('layers', { size: 16 }) %></span>
+          Dangodeck
+        </div>
+        <p class="footer-about text-muted">
+          Anime Trading Card Database &amp; Developer API. Browse, search and build with anime TCG data.
+        </p>
+      </div>
+      <div>
+        <h4 class="footer-head">Explore</h4>
+        <ul class="footer-list">
+          <li><a href="/cards">Cards Catalog</a></li>
+          <li><a href="/docs">API Docs</a></li>
+          <li><a href="/home">About</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="footer-head">Community</h4>
+        <ul class="footer-list">
+          <li><a href="https://github.com/sh1njs" target="_blank" rel="noopener noreferrer">GitHub — sh1njs</a></li>
+          <li><span class="text-muted">KKN (Keluh Kesah Ngoding)</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom text-muted">Dangodeck — Open Source. Built by Shieun.</div>
+  </footer>
+  </div>
+  <script src="/nav.js"></script>
+  <% if (typeof pageScript !== 'undefined' && pageScript) { %>
+  <script src="/<%= pageScript %>"></script>
+  <% } %>
+</body>
+</html>

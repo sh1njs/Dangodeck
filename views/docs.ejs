@@ -1,0 +1,119 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container section">
+  <div class="docs-layout">
+    <aside class="docs-sidebar">
+      <h2 class="docs-side-title">API Reference</h2>
+      <nav class="docs-nav">
+        <div class="docs-nav-group">
+          <p class="docs-nav-label">Getting Started</p>
+          <ul>
+            <li><a href="#base-url" class="mono">Base URL</a></li>
+            <li><a href="#authentication" class="mono">Authentication</a></li>
+            <li><a href="#rate-limit" class="mono">Rate Limit</a></li>
+          </ul>
+        </div>
+        <div class="docs-nav-group">
+          <p class="docs-nav-label">Endpoints</p>
+          <ul>
+            <% endpoints.forEach(function (ep) { %>
+            <li><a href="#<%= ep.id %>" class="mono"><%= ep.method %> <%= ep.path.split('?')[0].replace('/api', '') %></a></li>
+            <% }) %>
+          </ul>
+        </div>
+        <a href="/docs/api" target="_blank" rel="noopener noreferrer" class="nb-btn docs-swagger">
+          Swagger UI <%- icon('external-link', { size: 14 }) %>
+        </a>
+      </nav>
+    </aside>
+
+    <div class="docs-content">
+      <header class="docs-header">
+        <h1 class="page-title">Dangodeck API</h1>
+        <p class="text-muted">
+          A fast, professional REST API for anime TCG cards. JSON responses, fuzzy search,
+          pagination, filtering, and Redis-backed caching. Interactive Swagger is available at
+          <code class="mono">/docs/api</code>.
+        </p>
+      </header>
+
+      <section id="base-url" class="docs-section">
+        <h2 class="section-title">Base URL</h2>
+        <p class="text-muted">All endpoints are served under the <code class="mono">/api</code> prefix.</p>
+        <div class="nb-card code-static mono"><%= base %>/api</div>
+      </section>
+
+      <section id="authentication" class="docs-section">
+        <h2 class="section-title">Authentication</h2>
+        <p class="text-muted">
+          The public API requires no authentication. All read endpoints are open. Please be
+          considerate and cache where possible.
+        </p>
+      </section>
+
+      <section id="rate-limit" class="docs-section">
+        <h2 class="section-title">Rate Limit</h2>
+        <p class="text-muted">
+          Requests are limited to <strong>120 requests per minute</strong> per IP. Exceeding the
+          limit returns <code class="mono">429 Too Many Requests</code>.
+        </p>
+      </section>
+
+      <section class="docs-section">
+        <h2 class="section-title">Response Shape</h2>
+        <p class="text-muted">Every successful response is wrapped in a consistent envelope.</p>
+        <div class="nb-card code-static"><pre class="mono">{
+  "success": true,
+  "data": { /* card or list */ }
+}</pre></div>
+      </section>
+
+      <% endpoints.forEach(function (ep) { %>
+      <section id="<%= ep.id %>" class="docs-section endpoint-section">
+        <div class="endpoint-title-row">
+          <span class="nb-tag" style="background: <%= elementColor('Grass') %>; color:#1a1a1a;"><%= ep.method %></span>
+          <h2 class="section-title"><%= ep.title %></h2>
+        </div>
+        <code class="mono endpoint-fullpath"><%= ep.path.split('?')[0] %></code>
+        <p class="text-muted"><%= ep.desc %></p>
+
+        <% if (ep.params && ep.params.length) { %>
+        <div class="nb-card table-wrap">
+          <table class="param-table">
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <% ep.params.forEach(function (p) { %>
+              <tr>
+                <td class="mono"><strong><%= p.name %></strong></td>
+                <td class="mono text-muted"><%= p.type %></td>
+                <td class="text-muted"><%= p.desc %></td>
+              </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+
+        <div class="nb-card code-block" data-code-block>
+          <div class="code-tabs">
+            <% ep.examples.forEach(function (ex, i) { %>
+            <button type="button" class="code-tab <%= i === 0 ? 'is-active' : '' %>" data-lang="<%= ex.lang %>"><%= ex.lang %></button>
+            <% }) %>
+            <button type="button" class="nb-btn code-copy" data-copy>
+              <%- icon('copy', { size: 14 }) %> <span data-copy-label>Copy</span>
+            </button>
+          </div>
+          <% ep.examples.forEach(function (ex, i) { %>
+          <pre class="code-pre mono <%= i === 0 ? 'is-active' : '' %>" data-pane="<%= ex.lang %>"><code><%= ex.code %></code></pre>
+          <% }) %>
+        </div>
+      </section>
+      <% }) %>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer', { pageScript: 'docs.js' }) %>
