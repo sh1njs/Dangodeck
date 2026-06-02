@@ -19,6 +19,8 @@ async function bootstrap(): Promise<void> {
   await cards.init();
 
   const app = express();
+
+  app.set('trust proxy', true);
   app.disable('x-powered-by');
 
   app.set('view engine', 'ejs');
