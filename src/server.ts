@@ -1,4 +1,3 @@
-import fs from 'fs';
 import path from 'path';
 import compression from 'compression';
 import express from 'express';
@@ -34,17 +33,6 @@ async function bootstrap(): Promise<void> {
 
   app.use(compression());
   app.use(express.static(path.join(ROOT, 'public')));
-
-  // Serve the local card-image backup (used when CARDS_SOURCE=local). Picks the
-  // first existing dir so it works in dev (src/data) and after build (dist/data).
-  const imagesDir = [
-    path.join(ROOT, 'src', 'data', 'images'),
-    path.join(ROOT, 'data', 'images'),
-    path.join(ROOT, 'dist', 'data', 'images'),
-  ].find((p) => fs.existsSync(p));
-  if (imagesDir) {
-    app.use('/images', express.static(imagesDir, { maxAge: '7d', immutable: true }));
-  }
 
   // Public JSON API: permissive CORS + rate limiting.
   app.use('/api', (req, res, next) => {

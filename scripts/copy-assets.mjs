@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const copies = [
-  ['src/data', 'dist/data'],
   ['views', 'dist/views'],
   ['public', 'dist/public'],
 ];

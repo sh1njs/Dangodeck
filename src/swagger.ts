@@ -34,6 +34,50 @@ const cardSchema = {
   },
 };
 
+const statsSchema = {
+  type: 'object',
+  properties: {
+    hp: { type: 'integer' },
+    atk: { type: 'integer' },
+    def: { type: 'integer' },
+    spd: { type: 'integer' },
+  },
+};
+
+const calculatedCardSchema = {
+  allOf: [
+    cardSchema,
+    {
+      type: 'object',
+      properties: {
+        baseStats: statsSchema,
+        params: {
+          type: 'object',
+          properties: {
+            rarity: {
+              type: 'string',
+              enum: ['base', 'common', 'uncommon', 'rare', 'super_rare', 'ultra_rare'],
+            },
+            level: { type: 'integer', minimum: 1, maximum: 100 },
+            evo: { type: 'integer', minimum: 1, maximum: 3 },
+            ascension: { type: 'integer', minimum: 0, maximum: 5 },
+          },
+        },
+        multipliers: {
+          type: 'object',
+          properties: {
+            rarity: { type: 'number' },
+            level: { type: 'number' },
+            evo: { type: 'number' },
+            ascension: { type: 'number' },
+            total: { type: 'number' },
+          },
+        },
+      },
+    },
+  ],
+};
+
 const envelope = (data: object) => ({
   type: 'object',
   properties: { success: { type: 'boolean', example: true }, data },
@@ -68,10 +112,24 @@ export function buildOpenApiSpec(siteUrl: string) {
       '/api/cards/random': {
         get: {
           tags: ['Cards'],
-          summary: 'Get a random card',
+          summary: 'Random card with rolled (calculated) stats',
+          description:
+            'Returns a random card with a randomly rolled rarity, level (1-100), evo (1-3) and ascension (0-5). The `stats` field holds the calculated stats; `baseStats`, `params` and `multipliers` show the breakdown. Handy for game bots.',
           responses: {
             '200': {
-              description: 'A randomly selected card',
+              description: 'A randomly selected card with rolled stats',
+              content: { 'application/json': { schema: envelope(calculatedCardSchema) } },
+            },
+          },
+        },
+      },
+      '/api/cards/random/base': {
+        get: {
+          tags: ['Cards'],
+          summary: 'Random card with base stats only',
+          responses: {
+            '200': {
+              description: 'A randomly selected card (base stats)',
               content: { 'application/json': { schema: envelope(cardSchema) } },
             },
           },
@@ -151,6 +209,48 @@ export function buildOpenApiSpec(siteUrl: string) {
             '200': {
               description: 'The card',
               content: { 'application/json': { schema: envelope(cardSchema) } },
+            },
+            '404': { description: 'Card not found' },
+          },
+        },
+      },
+      '/api/cards/{id}/stats': {
+        get: {
+          tags: ['Cards'],
+          summary: 'Calculate a card’s stats for chosen tiers',
+          description:
+            'Deterministic stat calculation: final = round(base × rarity × level × evo × ascension).',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'integer' }, example: 1 },
+            {
+              name: 'rarity',
+              in: 'query',
+              schema: {
+                type: 'string',
+                enum: ['base', 'common', 'uncommon', 'rare', 'super_rare', 'ultra_rare'],
+                default: 'base',
+              },
+            },
+            {
+              name: 'level',
+              in: 'query',
+              schema: { type: 'integer', minimum: 1, maximum: 100, default: 1 },
+            },
+            {
+              name: 'evo',
+              in: 'query',
+              schema: { type: 'integer', minimum: 1, maximum: 3, default: 1 },
+            },
+            {
+              name: 'ascension',
+              in: 'query',
+              schema: { type: 'integer', minimum: 0, maximum: 5, default: 0 },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Card with calculated stats',
+              content: { 'application/json': { schema: envelope(calculatedCardSchema) } },
             },
             '404': { description: 'Card not found' },
           },

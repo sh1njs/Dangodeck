@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { config } from '../config';
 import { genAll } from '../lib/code-gen';
+import { STAT_CONFIG } from '../lib/stats';
 import type { CardsService } from '../services/cards.service';
 
 const DOCS_ENDPOINTS = [
@@ -8,9 +9,35 @@ const DOCS_ENDPOINTS = [
     id: 'ep-random',
     method: 'GET',
     path: '/api/cards/random',
-    title: 'Random Card',
-    desc: 'Returns a single randomly selected card from the database.',
+    title: 'Random Card (rolled stats)',
+    desc: 'Returns a random card with a randomly rolled rarity, level (1-100), evo (1-3) and ascension (0-5). The "stats" field holds the calculated stats; "baseStats", "params" and "multipliers" show the breakdown. Great for game bots.',
     params: [] as { name: string; type: string; desc: string }[],
+  },
+  {
+    id: 'ep-random-base',
+    method: 'GET',
+    path: '/api/cards/random/base',
+    title: 'Random Card (base stats)',
+    desc: 'Returns a single randomly selected card with its base stats only.',
+    params: [] as { name: string; type: string; desc: string }[],
+  },
+  {
+    id: 'ep-stats',
+    method: 'GET',
+    path: '/api/cards/1/stats?rarity=ultra_rare&level=100&evo=3&ascension=5',
+    title: 'Calculate Card Stats',
+    desc: 'Deterministic stat calculation for a card at chosen tiers: final = round(base × rarity × level × evo × ascension).',
+    params: [
+      { name: 'id', type: 'number (path)', desc: 'Numeric ID of the card.' },
+      {
+        name: 'rarity',
+        type: 'string',
+        desc: 'base, common, uncommon, rare, super_rare, ultra_rare. Default base.',
+      },
+      { name: 'level', type: 'number (1-100)', desc: 'Card level. Default 1.' },
+      { name: 'evo', type: 'number (1-3)', desc: 'Evolution stage. Default 1.' },
+      { name: 'ascension', type: 'number (0-5)', desc: 'Ascension rank. Default 0.' },
+    ],
   },
   {
     id: 'ep-id',
@@ -151,6 +178,7 @@ export function createWebRouter(cards: CardsService): Router {
         card,
         related,
         max,
+        statConfig: STAT_CONFIG,
       });
     } catch (err) {
       next(err);

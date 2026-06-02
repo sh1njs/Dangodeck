@@ -1,0 +1,76 @@
+<%- include('partials/head') %>
+<%- include('partials/header') %>
+
+<div class="container">
+  <section class="hero">
+    <div class="hero-copy">
+      <span class="nb-tag tag-accent">Anime TCG · Developer API</span>
+      <h1 class="hero-title">The anime trading card database, built for developers.</h1>
+      <p class="hero-lead text-muted">
+        Dangodeck gives you a clean catalog of anime TCG cards and a fast, fuzzy-search REST API.
+        Browse, search, and build.
+      </p>
+      <div class="hero-actions">
+        <a href="/cards" class="nb-btn nb-btn-accent">Explore Cards <%- icon('arrow-right', { size: 16 }) %></a>
+        <a href="/docs" class="nb-btn">API Docs <%- icon('book-open', { size: 16 }) %></a>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="nb-card stat-card">
+        <%- icon('database') %>
+        <div class="stat-value mono"><%= total || 1244 %></div>
+        <div class="stat-label text-muted">Cards</div>
+      </div>
+      <div class="nb-card stat-card">
+        <%- icon('zap') %>
+        <div class="stat-value mono"><%= elements || 9 %></div>
+        <div class="stat-label text-muted">Elements</div>
+      </div>
+      <div class="nb-card stat-card">
+        <%- icon('search') %>
+        <div class="stat-value mono"><%= animes || 177 %></div>
+        <div class="stat-label text-muted">Anime Titles</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Featured cards</h2>
+    <p class="text-muted">Top attackers in the database.</p>
+    <% if (featured && featured.length) { %>
+    <div class="card-grid featured-grid">
+      <% featured.forEach(function (card) { %>
+        <%- include('partials/card-tile', { card: card }) %>
+      <% }) %>
+    </div>
+    <% } else { %>
+    <p class="text-muted section">Start the API to load featured cards.</p>
+    <% } %>
+  </section>
+
+  <section class="section">
+    <h2 class="section-title">Featured endpoints</h2>
+    <p class="text-muted">A REST API designed to be obvious.</p>
+    <div class="endpoint-grid">
+      <% [
+        { method: 'GET', path: '/api/cards/random', desc: 'Fetch a random card' },
+        { method: 'GET', path: '/api/cards/:id', desc: 'Fetch a card by ID' },
+        { method: 'GET', path: '/api/cards/search?q=rem', desc: 'Fuzzy search by name' },
+        { method: 'GET', path: '/api/cards', desc: 'List with pagination & filters' }
+      ].forEach(function (e) { %>
+      <div class="nb-card endpoint-row">
+        <span class="nb-tag" style="background: <%= elementColor('Grass') %>; color:#1a1a1a;"><%= e.method %></span>
+        <div class="endpoint-meta">
+          <code class="mono endpoint-path"><%= e.path %></code>
+          <span class="text-muted endpoint-desc"><%= e.desc %></span>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <div class="section-cta">
+      <a href="/docs" class="nb-btn">Read the full docs <%- icon('arrow-right', { size: 16 }) %></a>
+    </div>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

@@ -105,10 +105,12 @@ Errors return `{ "success": false, "error": "..." }` with the appropriate HTTP s
 | `GET` | `/api` | API root — name, tagline, available endpoints |
 | `GET` | `/api/health` | Health check — returns status and total card count |
 | `GET` | `/api/cards` | List cards (paginated, filterable, sortable) |
-| `GET` | `/api/cards/random` | Returns a single randomly selected card |
+| `GET` | `/api/cards/random` | Random card with a randomly rolled rarity/level/evo/ascension and the resulting **calculated** stats |
+| `GET` | `/api/cards/random/base` | Random card with **base** stats only |
 | `GET` | `/api/cards/search` | Fuzzy search by name or anime |
 | `GET` | `/api/cards/facets` | Returns all unique elements, animes, and total card count |
 | `GET` | `/api/cards/:id` | Fetch a single card by numeric ID |
+| `GET` | `/api/cards/:id/stats` | Calculate a card's stats for chosen tiers: `final = round(base × rarity × level × evo × ascension)` |
 | `GET` | `/api/cards/:id/related` | Returns up to 6 related cards (same anime first, then same element) |
 
 ### Query Parameters
@@ -130,6 +132,32 @@ Errors return `{ "success": false, "error": "..." }` with the appropriate HTTP s
 |-----------|------|---------|-------------|
 | `q` | string | **required** | Search query — typo-tolerant fuzzy matching |
 | `limit` | number (1–50) | `20` | Max results |
+
+**`GET /api/cards/:id/stats`**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rarity` | string | `base` | One of `base`, `common`, `uncommon`, `rare`, `super_rare`, `ultra_rare` |
+| `level` | number (1–100) | `1` | Card level |
+| `evo` | number (1–3) | `1` | Evolution stage |
+| `ascension` | number (0–5) | `0` | Ascension rank |
+
+### Stat Scaling
+
+The database stores **base** stats only. Effective stats scale with four independent tiers, each contributing a multiplier:
+
+```
+final = round(base × rarityMult × levelMult × evoMult × ascensionMult)
+```
+
+| Tier | Range | Multiplier |
+|------|-------|------------|
+| Rarity | base → ultra_rare | ×1.0, ×1.1, ×1.25, ×1.5, ×1.8, ×2.2 |
+| Level | 1 → 100 | ×(1 + (level − 1) × 0.01) → up to ×1.99 |
+| Evolution | 1 → 3 | ×1.0, ×1.3, ×1.65 |
+| Ascension | 0 → 5 | ×1.0, ×1.08, ×1.16, ×1.24, ×1.32, ×1.4 |
+
+Defaults (base / level 1 / evo 1 / ascension 0) resolve to ×1.0, so calculated stats equal the base stats. All values live in `src/lib/stats.ts`. The card detail page (`/cards/:id`) includes an interactive calculator to preview stats across tiers.
 
 ---
 
@@ -175,7 +203,7 @@ interface Card {
 
 The database currently contains **1,244 cards** across multiple anime series and elements.
 
-Card data is loaded from a remote source on startup and refreshed every 5 minutes in the background. If the remote fetch fails, the server falls back to the bundled `src/data/cards.json` snapshot automatically — no manual intervention needed.
+Card data is loaded from the [MochiiLabs Dangodeck-Database](https://github.com/MochiiLabs/Dangodeck-Database) cloud source on startup and refreshed every 5 minutes in the background. If a refresh fails, the server keeps serving the last successfully loaded data.
 
 ---
 

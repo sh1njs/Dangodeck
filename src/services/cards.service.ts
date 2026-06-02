@@ -1,7 +1,4 @@
 import Fuse from 'fuse.js';
-import * as fs from 'fs';
-import * as path from 'path';
-import { config } from '../config';
 import type {
   Card,
   Facets,
@@ -13,7 +10,7 @@ import type {
 } from '../lib/types';
 
 const REMOTE_URL =
-  'https://raw.githubusercontent.com/MochiiLabs/database/refs/heads/main/tgc%3A%20anime/cards.json';
+  'https://raw.githubusercontent.com/MochiiLabs/Dangodeck-Database/refs/heads/main/cards.json';
 const DB_REFRESH_TTL = 5 * 60 * 1000;
 
 export class CardsService {
@@ -51,36 +48,24 @@ export class CardsService {
   }
 
   private async loadCards(): Promise<void> {
-    let raw: RawCard[] | null = null;
-
-    if (config.cardsSource === 'local') {
-      // Local-only mode: read the bundled snapshot, never touch the network.
-      raw = this.readLocal();
-      if (raw && raw.length > 0) {
-        console.log(`[cards] Loaded ${raw.length} cards from local snapshot (CARDS_SOURCE=local).`);
-      }
-    } else {
-      // Cloud mode: prefer raw GitHub (MochiiLabs), fall back to local snapshot.
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 15000);
-        const res = await fetch(REMOTE_URL, { signal: controller.signal });
-        clearTimeout(timer);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        raw = (await res.json()) as RawCard[];
-        console.log(`[cards] Loaded ${raw.length} cards from remote source.`);
-      } catch (err) {
-        console.warn(
-          `[cards] Remote fetch failed (${(err as Error).message}), using local snapshot.`
-        );
-        raw = this.readLocal();
-      }
+    // Cloud-only: card data is always fetched from the MochiiLabs raw GitHub
+    // database. On failure we keep whatever is already in memory (if any).
+    let raw: RawCard[];
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 15000);
+      const res = await fetch(REMOTE_URL, { signal: controller.signal });
+      clearTimeout(timer);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      raw = (await res.json()) as RawCard[];
+      console.log(`[cards] Loaded ${raw.length} cards from remote source.`);
+    } catch (err) {
+      console.warn(`[cards] Remote fetch failed (${(err as Error).message}).`);
+      if (this.cards.length > 0) return; // keep last-good data
+      raw = [];
     }
 
-    if (!raw || raw.length === 0) {
-      if (this.cards.length > 0) return;
-      raw = this.readLocal() ?? [];
-    }
+    if (raw.length === 0 && this.cards.length > 0) return;
 
     this.cards = this.normalize(raw);
     this.byId = new Map(this.cards.map((c) => [c.id, c]));
@@ -95,25 +80,6 @@ export class CardsService {
       minMatchCharLength: 1,
     });
     this.lastLoad = Date.now();
-  }
-
-  private readLocal(): RawCard[] | null {
-    const candidates = [
-      path.join(__dirname, '..', 'data', 'cards.json'),
-      path.join(process.cwd(), 'src', 'data', 'cards.json'),
-      path.join(process.cwd(), 'data', 'cards.json'),
-      path.join(process.cwd(), 'dist', 'data', 'cards.json'),
-    ];
-    for (const p of candidates) {
-      try {
-        if (fs.existsSync(p)) {
-          return JSON.parse(fs.readFileSync(p, 'utf-8')) as RawCard[];
-        }
-      } catch {
-        // try next
-      }
-    }
-    return null;
   }
 
   private async ensureFresh(): Promise<void> {
