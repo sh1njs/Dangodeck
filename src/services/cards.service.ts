@@ -1,6 +1,7 @@
 import Fuse from 'fuse.js';
 import * as fs from 'fs';
 import * as path from 'path';
+import { config } from '../config';
 import type {
   Card,
   Facets,
@@ -51,19 +52,29 @@ export class CardsService {
 
   private async loadCards(): Promise<void> {
     let raw: RawCard[] | null = null;
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15000);
-      const res = await fetch(REMOTE_URL, { signal: controller.signal });
-      clearTimeout(timer);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      raw = (await res.json()) as RawCard[];
-      console.log(`[cards] Loaded ${raw.length} cards from remote source.`);
-    } catch (err) {
-      console.warn(
-        `[cards] Remote fetch failed (${(err as Error).message}), using local snapshot.`
-      );
+
+    if (config.cardsSource === 'local') {
+      // Local-only mode: read the bundled snapshot, never touch the network.
       raw = this.readLocal();
+      if (raw && raw.length > 0) {
+        console.log(`[cards] Loaded ${raw.length} cards from local snapshot (CARDS_SOURCE=local).`);
+      }
+    } else {
+      // Cloud mode: prefer raw GitHub (MochiiLabs), fall back to local snapshot.
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+        const res = await fetch(REMOTE_URL, { signal: controller.signal });
+        clearTimeout(timer);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        raw = (await res.json()) as RawCard[];
+        console.log(`[cards] Loaded ${raw.length} cards from remote source.`);
+      } catch (err) {
+        console.warn(
+          `[cards] Remote fetch failed (${(err as Error).message}), using local snapshot.`
+        );
+        raw = this.readLocal();
+      }
     }
 
     if (!raw || raw.length === 0) {

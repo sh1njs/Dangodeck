@@ -1,83 +1,312 @@
 # Dangodeck
 
-**Anime Trading Card Database & Developer API**
+An Anime Trading Card Game database and REST API built with [Express](https://expressjs.com/), TypeScript, and [Fuse.js](https://www.fusejs.io/). Features a full-stack web UI, paginated card browser, fuzzy search, and a public JSON API with Swagger/OpenAPI docs.
 
-Dangodeck is a professional REST API and modern website for exploring anime TCG cards. Built to feel like a real public product in the spirit of the Pokémon TCG API, AniList, Pokédex, and TCGDex.
-
-## Structure
-
-Single monorepo managed with **npm workspaces** — one install, one build, one run command from the root.
-
-```
-.
-├── package.json   root workspace (orchestrates api + web via concurrently)
-├── api/           NestJS + TypeScript REST API (Swagger, Fuse.js fuzzy search, throttling, Redis/in-memory cache)
-└── web/           Next.js 15 (App Router) + Tailwind + Neubrutalism Slim UI
-```
-
-> **Data source:** cards are loaded from the existing community database
-> (`MochiiLabs/database`, 1244 cards). A local snapshot lives at `api/data/cards.json`
-> and is used automatically if the remote source is unreachable.
->
-> The real card schema is `{ id, name, slug, anime, element, stats{hp,atk,def,spd}, talent{name,description}, image, lastPatch }`.
-
-## Quick start
-
-From the **root folder** — one install handles both `api` and `web`:
-
-```bash
-npm install        # installs all workspaces
-npm run build      # builds api + web
-npm start          # runs BOTH: API on :4000, Web on :3000
-```
-
-That's it. Open:
-
-- Web → http://localhost:3000
-- API → http://localhost:4000 (Swagger at http://localhost:4000/docs/api)
-
-### Development (hot reload)
-
-```bash
-npm run dev        # API (watch) + Web (next dev) together
-```
-
-### Run just one side
-
-```bash
-npm run dev:api    # or  npm run start:api
-npm run dev:web    # or  npm run start:web
-```
-
-Redis is optional — set `REDIS_URL` (see `api/.env.example`) to enable it, otherwise an in-memory cache is used automatically. Set `API_URL` / `NEXT_PUBLIC_API_URL` only if the API runs somewhere other than `http://localhost:4000` (see `web/.env.example`).
-
-## API endpoints
-
-Base URL: `/api`
-
-| Method | Path                      | Description                                                   |
-| ------ | ------------------------- | ------------------------------------------------------------- |
-| GET    | `/api/cards/random`       | A random card                                                 |
-| GET    | `/api/cards/:id`          | Card by numeric ID                                            |
-| GET    | `/api/cards/search?q=rem` | Fuzzy, typo-tolerant search                                   |
-| GET    | `/api/cards`              | List with `page`, `limit`, `sort`, `element`, `anime`, `name` |
-| GET    | `/api/cards/:id/related`  | Related cards (same anime / element)                          |
-| GET    | `/api/cards/facets`       | Available elements & anime titles                             |
-
-All successful responses use the envelope `{ "success": true, "data": ... }`.
-
-Interactive docs: **`/docs/api`** (Swagger), and a hand-built reference at the website's **`/docs`**.
-
-## Website pages
-
-- `/` — landing (hero, stats, featured cards & endpoints)
-- `/home` — about, creator, community, contributing
-- `/docs` — API reference with code samples (JS, TS, Python, PHP, Go, cURL)
-- `/cards` — catalog with fuzzy search, element/anime filters, sorting, infinite scroll
-- `/cards/[id]` — card detail with stats, talent, and related cards
-
-Dark/light mode, SEO metadata, OpenGraph/Twitter cards, sitemap, and robots are all included.
+> Built by [sh1njs](https://github.com/sh1njs)
 
 ---
 
-Built by **Shieun** ([github.com/sh1njs](https://github.com/sh1njs)) · Community: KKN (Keluh Kesah Ngoding) · Open Source.
+## Table of Contents
+
+- [Features](#features)
+- [Project Structure](#project-structure)
+- [API Endpoints](#api-endpoints)
+- [Web Pages](#web-pages)
+- [Card Data Schema](#card-data-schema)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Environment Variables](#environment-variables)
+  - [Running in Development](#running-in-development)
+  - [Building for Production](#building-for-production)
+- [Caching](#caching)
+- [Rate Limiting](#rate-limiting)
+- [Deployment](#deployment)
+- [Tech Stack](#tech-stack)
+
+---
+
+## Features
+
+- REST API with 6 endpoints — browse, filter, sort, search, and fetch cards by ID
+- Typo-tolerant fuzzy search via Fuse.js (exact → partial → fuzzy, priority-ordered)
+- Paginated card list with filtering by element, anime, and name, plus multi-field sorting
+- Card data auto-fetched from a remote source on startup, with local JSON snapshot fallback
+- Database refreshes in-memory every 5 minutes without downtime
+- Dual caching layer — Redis when available, in-memory fallback when not
+- Full Swagger/OpenAPI 3.0 docs at `/docs/api` with live try-it-out support
+- Custom `/docs` page with code examples in 6 languages (cURL, JS, TS, Python, PHP, Go)
+- Server-side rendered UI with EJS templates, card detail pages, and related card suggestions
+- CORS-open API, gzip compression, and rate limiting baked in
+
+---
+
+## Project Structure
+
+```
+src/
+├── server.ts                 # Entry point — bootstraps Express, mounts routes
+├── config.ts                 # Server config (port, Redis URL, site URL, rate limit)
+├── swagger.ts                # OpenAPI 3.0 spec + swagger-ui-express mount
+├── data/
+│   └── cards.json            # Local card snapshot (1244 cards, used as fallback)
+├── lib/
+│   ├── types.ts              # Shared TypeScript interfaces (Card, Facets, Paginated...)
+│   ├── query.ts              # Query string parsers (list + search)
+│   ├── code-gen.ts           # Code example generator (6 languages)
+│   ├── elements.ts           # Element → color mapping
+│   └── icons.ts              # SVG icon helpers for templates
+├── routes/
+│   ├── api.routes.ts         # All /api/* endpoints
+│   └── web.routes.ts         # Web UI routes + docs page endpoint definitions
+└── services/
+    ├── cards.service.ts      # Card loading, normalization, search, list, facets, related
+    └── cache.service.ts      # Redis + in-memory fallback cache
+
+views/                        # EJS templates
+├── landing.ejs               # Homepage
+├── cards.ejs                 # Card browser (paginated, filterable)
+├── card-detail.ejs           # Individual card page
+├── docs.ejs                  # Developer docs with code examples
+├── home.ejs                  # About page
+├── 404.ejs                   # Error page
+└── partials/
+    ├── head.ejs
+    ├── header.ejs
+    ├── footer.ejs
+    └── card-tile.ejs
+
+public/                       # Static assets served directly
+├── styles.css
+├── cards.js                  # Client-side card browser (filtering, pagination)
+├── docs.js                   # Client-side docs interactions
+└── nav.js
+
+scripts/
+└── copy-assets.mjs           # Post-build: copies views/, public/, data/ into dist/
+```
+
+---
+
+## API Endpoints
+
+All endpoints return a consistent JSON envelope:
+
+```json
+{ "success": true, "data": ... }
+```
+
+Errors return `{ "success": false, "error": "..." }` with the appropriate HTTP status code.
+
+### Cards
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api` | API root — name, tagline, available endpoints |
+| `GET` | `/api/health` | Health check — returns status and total card count |
+| `GET` | `/api/cards` | List cards (paginated, filterable, sortable) |
+| `GET` | `/api/cards/random` | Returns a single randomly selected card |
+| `GET` | `/api/cards/search` | Fuzzy search by name or anime |
+| `GET` | `/api/cards/facets` | Returns all unique elements, animes, and total card count |
+| `GET` | `/api/cards/:id` | Fetch a single card by numeric ID |
+| `GET` | `/api/cards/:id/related` | Returns up to 6 related cards (same anime first, then same element) |
+
+### Query Parameters
+
+**`GET /api/cards`**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `page` | number | `1` | Page number |
+| `limit` | number (1–100) | `20` | Items per page |
+| `sort` | string | — | Field to sort by. Prefix `-` for descending. One of: `id`, `name`, `anime`, `element`, `hp`, `atk`, `def`, `spd` |
+| `element` | string | — | Filter by element (exact match, case-insensitive) |
+| `anime` | string | — | Filter by anime title (contains, case-insensitive) |
+| `name` | string | — | Filter by card name (contains, case-insensitive) |
+
+**`GET /api/cards/search`**
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `q` | string | **required** | Search query — typo-tolerant fuzzy matching |
+| `limit` | number (1–50) | `20` | Max results |
+
+---
+
+## Web Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page — overview, stats, and featured cards |
+| `/cards` | Browsable card catalog with live filtering and sorting |
+| `/cards/:id` | Card detail page with stats, talent, and related cards |
+| `/docs` | Developer API docs with endpoint reference and code examples |
+| `/home` | About page |
+
+Interactive API documentation (Swagger UI) is available at `/docs/api`.
+
+---
+
+## Card Data Schema
+
+Each card object contains:
+
+```ts
+interface Card {
+  id: number;           // Unique numeric ID
+  name: string;         // Character name
+  slug: string;         // URL-friendly identifier, e.g. "rem-12"
+  anime: string;        // Source anime title
+  element: string;      // One of: Neutral, Light, Ground, Dark, Electric, Grass, Fire, Water, Null
+  stats: {
+    hp: number;
+    atk: number;
+    def: number;
+    spd: number;
+  };
+  talent: {
+    name: string;       // Talent/ability name
+    description: string;
+  };
+  image: string;        // Card image URL
+  lastPatch: boolean;   // Whether the card was updated in the last patch
+}
+```
+
+The database currently contains **1,244 cards** across multiple anime series and elements.
+
+Card data is loaded from a remote source on startup and refreshed every 5 minutes in the background. If the remote fetch fails, the server falls back to the bundled `src/data/cards.json` snapshot automatically — no manual intervention needed.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) v18 or higher
+- Redis (optional — falls back to in-memory cache without it)
+
+### Installation
+
+```bash
+git clone https://github.com/sh1njs/dangodeck.git
+cd dangodeck
+npm install
+```
+
+### Environment Variables
+
+Copy `.env.example` to `.env` and fill in the values:
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `PORT` | — | `3000` | Port the server listens on |
+| `REDIS_URL` | — | — | Redis connection URL. If omitted, in-memory cache is used instead |
+| `SITE_URL` | — | `http://localhost:3000` | Public base URL — used by Swagger as the API server URL |
+
+### Running in Development
+
+```bash
+npm run dev
+```
+
+Uses `tsx watch` — the server auto-restarts on any file change. No build step required.
+
+### Building for Production
+
+```bash
+npm run build
+```
+
+This compiles TypeScript to `dist/` and copies `views/`, `public/`, and `data/` into `dist/` via `scripts/copy-assets.mjs`.
+
+```bash
+npm start
+```
+
+Runs the compiled output from `dist/server.js`. Requires `NODE_ENV` and env variables to be set (either via `.env` file or the host environment).
+
+To type-check without emitting:
+
+```bash
+npm run typecheck
+```
+
+---
+
+## Caching
+
+Dangodeck uses a two-tier cache with automatic fallback:
+
+- **Redis** — used when `REDIS_URL` is configured and the connection is healthy. TTLs vary per endpoint (60s for list, 120s for search, 300s for individual cards and facets).
+- **In-memory** — used automatically if Redis is not configured or the connection drops. Same TTL behavior.
+
+If Redis goes down mid-run, the server logs a warning and silently continues using memory. No restart needed.
+
+---
+
+## Rate Limiting
+
+The `/api/*` routes are rate-limited to **120 requests per minute per IP** using `express-rate-limit`. Requests over the limit receive:
+
+```json
+{ "success": false, "error": "Too Many Requests" }
+```
+
+Standard rate-limit headers (`RateLimit-*`) are included in all API responses.
+
+---
+
+## Deployment
+
+Dangodeck is a standard Node.js HTTP server and runs anywhere Node.js 18+ is supported.
+
+**PM2 (VPS):**
+
+```bash
+npm run build
+npm install -g pm2
+pm2 start npm --name Dangodeck -- run dev
+pm2 save && pm2 startup
+```
+
+**Docker:**
+
+```dockerfile
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --omit=dev
+COPY . .
+RUN npm run build
+CMD ["node", "--env-file=.env", "dist/server.js"]
+```
+
+**Railway / Render / Fly.io:**
+Set the build command to `npm run build` and the start command to `npm start`. Configure `PORT`, `SITE_URL`, and optionally `REDIS_URL` in the platform's environment settings.
+
+---
+
+## Tech Stack
+
+| Package | Purpose |
+|---------|---------|
+| [Express](https://expressjs.com/) | HTTP server and routing |
+| [TypeScript](https://www.typescriptlang.org/) | Type-safe development |
+| [EJS](https://ejs.co/) | Server-side HTML templating |
+| [Fuse.js](https://www.fusejs.io/) | Fuzzy search with scoring |
+| [ioredis](https://github.com/redis/ioredis) | Redis client with auto-reconnect |
+| [express-rate-limit](https://github.com/express-rate-limit/express-rate-limit) | API rate limiting |
+| [swagger-ui-express](https://github.com/scottie1984/swagger-ui-express) | Swagger UI for OpenAPI docs |
+| [compression](https://github.com/expressjs/compression) | Gzip response compression |
+| [tsx](https://github.com/privatenumber/tsx) | TypeScript execution for dev mode |
+
+---
+
+## License
+
+MIT © [sh1njs](https://github.com/sh1njs)
